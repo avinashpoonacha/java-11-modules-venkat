@@ -1,0 +1,211 @@
+Java Next Steps: Modules
+Venkat Subramaniam
+venkats@agiledeveloper.com
+@venkat_s  
+
+Getting started:
+-code will be pushed live during the class, please clone the repo
+  Please do not use the browser, use git clone from the command line
+  git clone http://www.agiledeveloper.com/repos/git/jm052521
+  userid: onlineclass
+  Password: code4love
+
+Part 1: Creating Modules:
+-Why Modules?
+-Java, JVM, JDK concerns
+-large jars
+  -how big?                     
+  -use CORBA, for example?
+-lack of clarity on dependencies
+ -But doesn't Maven tell us that?
+ -Compile time, but what about runtime?
+ -Same dependency graph at compile time and runtime?
+  -Easy to verify
+   -Consistent, part of the ecosystem
+    -Can be secure
+    -Can fail fast if something is missing
+-public is too open
+ -classes that are not intended for others to use
+ -reflection gave way to access these
+-late runtime failures              
+ -Runtime failures are delayed until point of suffering
+   -What if we can fail fast, at start up?
+-Modularization
+ -smaller jars
+ -clear boundary of separation
+ -stricter access control
+ -more secure
+ -fail fast
+-Why not use OSGI?
+ -OSGI sits on the roof, can't use that to modularize the foundation
+ -The goal was to modularize the JDK and the JRE first
+ -Then apply that solution to modularize libraries, frameworks, and applications
+-Pragmatic, not ambitious
+-Modules               
+ -Java Ecosystem has been modularized - **this was the primary goal
+ -Optionally, we can use the same approach to modularize our code
+ -**We don't have to, but it is better
+-Rules for Modules
+  -all modules will depend on java.base (except java.base of course)
+  -no cycles between modules at compile time
+    Acyclic Dependency Principle
+ -Packages go into modules
+-What's a Module?
+ -A collection of code (packages) and data
+  code -> package -> module -> jar
+ -Has a name
+ -Tells what it needs—requires
+ -Tells what it provides—exports
+ -Reuse-Release Equivalency Principle
+-classpath vs. modulepath
+ -Good old Java - classpath
+ -Modern Java - modulepath plus classpath
+ -To use modules, use modulepath
+ -classpath useful to run old code without any modules
+-Let's run old Jar in modern Java
+-list modules --list-modules
+-Let's define modules
+-view the metadata with jar -d
+-Let's hide an implementation
+-visibility
+ -Readability
+   - A module "reads" the modules it depends on
+  - exports
+  - public is not the same any more
+  - public + exports becomes visible
+  - public with no exports is not visible
+  - that's both at compile time and runtime
+-Poll 1
+-lab
+  please go to the code/part1/lab directory and take a look at readme.txt
+  You may use any IDE.
+  If you are using IntelliJ IDEA community edit, then File open of the lab directory
+
+part 2: Working with Multiple Modules:
+-visibility
+-handling over a reference
+  third -> second -> first
+  what if third wants to use first?
+  
+  Option 1. 
+    second requires first
+    third requires second
+    third requires first
+      second --> first
+      third --> second
+      third --> first
+    
+  Option 2. 
+    second transitive requires first
+    third does not do any explicit require
+    
+    third ---> second ----transitive ---> first
+    (third can use first because it uses second)
+    
+  second requires first and then it also makes it visible for any module that requires
+  second.
+  
+  Is this a good idea or a bad idea?
+  
+  Not a good idea for third party dependencies.
+  
+  Use this option only when you are called into a project which is a ball-of-mud.
+  You need several weeks, if not months, to break it apart. So use transitive
+  while you take time to break the ball-of-mud into smaller modules.   
+    
+-implied readability
+-module versioning
+ -glorified time stamp
+-targeted linking
+ -export JMODS="$JAVA_HOME/jmods"
+ -jlink -p $JMODS:.... --add-modules m1,m2 --launcher theutilapp=mainclass --output output/utilapp
+-Poll 2
+-lab
+
+Part 3: Service Loader API:
+-explicit dependency
+-What about dynamic dependency for production
+ - like in plugins?
+-Service Loader API
+-uses interfaceName
+-provides interfaceName with ClassName
+-defining an interface
+-defining provider one
+-defining provider two
+ -static provider method
+-ServiceLoader's load
+-the User
+-ServiceLoader<Vendor> vendors = ServiceLoader.load(Vendor.class)
+-iterate display instance, getName
+-vendors.reload()
+-iterate again
+-stream based iteration
+-.stream()
+-filter provider.type().getSimpleName()
+-provider.get()
+-peek
+-forEach
+-Poll 3
+-lab
+
+part 4: Working with Legacy Jars:
+-Revisiting classpath and modulepath
+-Running old jars in modern JVM
+  -Any jar running in the classpath is called an unnamed module
+  -Any traditional jar running in the modulepath is called automatic module
+  -Any jar with a module descriptor running in
+  	-classpath is an unnamed module
+  	-modulepath is an explicitly named module
+  -modules can't share packages
+  -classes in unnamed modules can talk to other classes in the unnamed module
+  -automatic modules can talk to other automatic modules
+  -automatic modules can talk to unnamed modules
+  -unnamed modules *can not* talk to automatic modules
+  -an explicit named module can talk to other explicit named module
+  -an explicit named module can talk to automatic modules
+  -an explicit named module *can not* talk to unnamed modules
+  -an explicit named module has to requires any modules it needs    
+    - including automatic modules (so please given a decent name)
+  -an explicit named module exports only what it specifically exports
+  -an automatic named modules automatically exports all its packages  
+-How to transition into modules
+  -Starting with legacy
+  -Run them all in the classpath in old Java
+  -Run them all in the classpath in modern Java
+     -fix any errors
+  -Run them all in modulepath
+  -Give names for automatic modules
+  -Convert from top to bottom to explicit modules
+  
+  jar1 -> jar2 -> jar3 -> jar4
+
+             modulepath					classpath
+  					jar1 -> jar2 -> jar3 -> jar4
+  	jar1 -> jar2 -> jar3 -> jar4
+
+  	jar1E-> jar2 -> jar3 -> jar4
+  	jar1E-> jar2E-> jar3 -> jar4
+  	jar1E-> jar2E-> jar3E -> jar4
+  	jar1E-> jar2E-> jar3E -> jar4E
+  
+-Poll 4
+-lab
+
+modulepath       classpath
+             |
+  Explclit --x---> No
+    |        |
+    v        |
+  Explclit <-x---  Unnamed module
+    |        |
+    |        |
+    v        |
+ Automatic ----------> 
+    ^        |
+    |      <-x-----
+ Automatic   |
+             |
+             |
+
+Discussions:
+-discussions
